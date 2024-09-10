@@ -32,3 +32,47 @@ export const getProjects = async (accessToken: string): Promise<Project[]> => {
     );
     return data.projects;
   };
+
+const CREATE_PROJECT = gql`
+  mutation CreateProject($name: String!, $description: String!) {
+    insert_projects_one(object: {name: $name, description: $description}) {
+      id
+      name
+      description
+      status
+    }
+  }
+`;
+
+export const createProject = async (accessToken: string, name: string, description: string): Promise<Project> => {
+  const variables = {
+      name,
+      description
+  };
+  const data = await client.request<{ insert_projects_one: Project }>(CREATE_PROJECT, variables,
+      { 
+          'x-hasura-admin-secret': ADMIN_SECRET,
+          'Authorization': `Bearer ${accessToken}`,
+      }
+  );
+  return data.insert_projects_one;
+};
+
+export const deleteProject = async (accessToken: string, projectId: string): Promise<void> => {
+  const DELETE_PROJECT = gql`
+    mutation DeleteProject($id: Int!) {
+      delete_projects_by_pk(id: $id) {
+        id
+      }
+    }
+  `;
+
+  await client.request(
+    DELETE_PROJECT,
+    { id: projectId },
+    {
+      'x-hasura-admin-secret': ADMIN_SECRET,
+      'Authorization': `Bearer ${accessToken}`,
+    }
+  );
+};
