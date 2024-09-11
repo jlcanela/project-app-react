@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createProject } from '../api/projects';
+import { createProject } from '../api/graphql';
 import { Modal, Form, Button } from 'react-bootstrap';
 
 const BtnAddProject: React.FC = () => {

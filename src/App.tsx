@@ -6,6 +6,7 @@ import MyNavbar from './components/Navbar';
 import Home from './pages/Home';
 import Projects from './pages/Projects';
 import { Auth0Provider } from '@auth0/auth0-react';
+import ProjectDetail from './pages/ProjectDetail';
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,7 @@ const App: React.FC = () => {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/projects" element={<Projects />} />
+            <Route path="/projects/:id" element={<ProjectDetail />} />
           </Routes>
         </Container>
       </Router>

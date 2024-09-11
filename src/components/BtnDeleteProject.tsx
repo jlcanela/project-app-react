@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { deleteProject } from '../api/projects';
+import { deleteProject } from '../api/graphql';
 import { Button, Modal } from 'react-bootstrap';
 import { Trash } from 'react-bootstrap-icons';
 

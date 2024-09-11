@@ -1,10 +1,20 @@
 import React from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useQuery } from '@tanstack/react-query';
-import { getProjects } from '../api/projects';
+import { graphqlQuery, Project } from '../api/graphql';
 import { Table, Spinner, Alert } from 'react-bootstrap';
+import ProjectRow, { PROJECT_ROW_FRAGMENT } from '../components/ProjectRow';
 import BtnAddProject from '../components/BtnAddProject';
-import BtnDeleteProject from '../components/BtnDeleteProject';
+import { gql } from 'graphql-request';
+
+const GET_PROJECTS = gql`
+  query GetProjects {
+    projects {
+      ...ProjectRowFragment
+    }
+  }
+  ${PROJECT_ROW_FRAGMENT}
+`;
 
 const Projects: React.FC = () => {
   const { getAccessTokenSilently } = useAuth0();
@@ -14,7 +24,8 @@ const Projects: React.FC = () => {
     queryKey: ['projects'],
     queryFn: async () => {
       const accessToken = await getAccessTokenSilently();
-      return getProjects(accessToken);
+      const data = await graphqlQuery<{ projects: Project[] }>(accessToken, GET_PROJECTS);
+      return data.projects;
     },
     staleTime: FIVE_SECONDS,
   });
@@ -25,7 +36,6 @@ const Projects: React.FC = () => {
   return (
     <div>
       <h1>Projects</h1>
-
       <Table striped bordered hover>
         <thead>
           <tr>
@@ -38,15 +48,7 @@ const Projects: React.FC = () => {
         </thead>
         <tbody>
           {projects?.map((project) => (
-            <tr key={project.id}>
-              <td>{project.id}</td>
-              <td>{project.name}</td>
-              <td>{project.description}</td>
-              <td>{project.status}</td>
-              <td>
-                <BtnDeleteProject projectId={project.id} />
-              </td>
-            </tr>
+            <ProjectRow key={project.id} project={project} />
           ))}
         </tbody>
       </Table>
