@@ -7,6 +7,8 @@ import Home from './pages/Home';
 import Projects from './pages/Projects';
 import { Auth0Provider } from '@auth0/auth0-react';
 import ProjectDetail from './pages/ProjectDetail';
+import Parties from './pages/Parties';
+import PartyDetail from './pages/PartyDetail';
 
 const queryClient = new QueryClient();
 
@@ -34,6 +36,8 @@ const App: React.FC = () => {
             <Route path="/" element={<Home />} />
             <Route path="/projects" element={<Projects />} />
             <Route path="/projects/:id" element={<ProjectDetail />} />
+            <Route path="/parties" element={<Parties />} />
+            <Route path="/parties/:id" element={<PartyDetail />} />
           </Routes>
         </Container>
       </Router>

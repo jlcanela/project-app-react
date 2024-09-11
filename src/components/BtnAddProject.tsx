@@ -1,8 +1,27 @@
 import React, { useState } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createProject } from '../api/graphql';
+import { graphqlQuery } from '../api/graphql';
 import { Modal, Form, Button } from 'react-bootstrap';
+import { gql } from 'graphql-request';
+
+const CREATE_PROJECT = gql`
+  mutation CreateProject($name: String!, $description: String!) {
+    insert_projects_one(object: { name: $name, description: $description }) {
+      id
+      name
+      description
+    }
+  }
+`;
+
+interface CreateProjectResponse {
+  insert_projects_one: {
+    id: string;
+    name: string;
+    description: string;
+  };
+}
 
 const BtnAddProject: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
@@ -17,19 +36,19 @@ const BtnAddProject: React.FC = () => {
   const createProjectMutation = useMutation({
     mutationFn: async ({ name, description }: { name: string; description: string }) => {
       const accessToken = await getAccessTokenSilently();
-      return createProject(accessToken, name, description);
+      return graphqlQuery<CreateProjectResponse>(accessToken, CREATE_PROJECT, { name, description });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
     },
   });
 
-  const handleInputChange = (e:any) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setNewProject({ ...newProject, [name]: value });
   };
 
-  const handleSubmit = async (e:any) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     createProjectMutation.mutate(newProject);
     handleClose();
