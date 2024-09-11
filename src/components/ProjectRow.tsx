@@ -1,8 +1,8 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from 'react-bootstrap';
-import { Eye, Pencil } from 'react-bootstrap-icons';
-import BtnDeleteProject from './BtnDeleteProject';
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "react-bootstrap";
+import { Eye, Pencil } from "react-bootstrap-icons";
+import BtnDeleteProject from "./BtnDeleteProject";
 
 export const PROJECT_ROW_FRAGMENT = `
   fragment ProjectRowFragment on projects {
@@ -51,10 +51,20 @@ export const ProjectRow: React.FC<ProjectRowProps> = ({ project }) => {
       <td>{project.description}</td>
       <td>{project.project_status.description}</td>
       <td>
-        <Button variant="primary" size="sm" className="me-2" onClick={handleView}>
+        <Button
+          variant="primary"
+          size="sm"
+          className="me-2"
+          onClick={handleView}
+        >
           <Eye /> View
         </Button>
-        <Button variant="secondary" size="sm" className="me-2" onClick={handleEdit}>
+        <Button
+          variant="secondary"
+          size="sm"
+          className="me-2"
+          onClick={handleEdit}
+        >
           <Pencil /> Edit
         </Button>
         <BtnDeleteProject projectId={project.id} />

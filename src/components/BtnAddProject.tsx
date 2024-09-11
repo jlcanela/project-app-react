@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
-import { useAuth0 } from '@auth0/auth0-react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { graphqlQuery } from '../api/graphql';
-import { Modal, Form, Button } from 'react-bootstrap';
-import { gql } from 'graphql-request';
-import { useFetchUserIdFromToken } from '../auth/token';
+import React, { useState } from "react";
+import { useAuth0 } from "@auth0/auth0-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { graphqlQuery } from "../api/graphql";
+import { Modal, Form, Button } from "react-bootstrap";
+import { gql } from "graphql-request";
+import { useFetchUserIdFromToken } from "../auth/token";
 
 const CREATE_PROJECT = gql`
   mutation CreateProject($name: String!, $description: String!, $owner: Int!) {
-    insert_projects_one(object: {name: $name, description: $description, owner: $owner}) {
+    insert_projects_one(
+      object: { name: $name, description: $description, owner: $owner }
+    ) {
       id
       name
       description
@@ -28,27 +30,39 @@ interface CreateProjectResponse {
 
 const BtnAddProject: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
-  const [newProject, setNewProject] = useState({ name: '', description: '' });
+  const [newProject, setNewProject] = useState({ name: "", description: "" });
 
   const userId = useFetchUserIdFromToken();
 
   const handleClose = () => setShowModal(false);
   const handleShow = () => setShowModal(true);
-  
+
   const { getAccessTokenSilently } = useAuth0();
   const queryClient = useQueryClient();
 
   const createProjectMutation = useMutation({
-    mutationFn: async ({ name, description }: { name: string; description: string }) => {
+    mutationFn: async ({
+      name,
+      description,
+    }: {
+      name: string;
+      description: string;
+    }) => {
       const accessToken = await getAccessTokenSilently();
-      return graphqlQuery<CreateProjectResponse>(accessToken, CREATE_PROJECT, { name, description, owner: await userId() });
+      return graphqlQuery<CreateProjectResponse>(accessToken, CREATE_PROJECT, {
+        name,
+        description,
+        owner: await userId(),
+      });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
     },
   });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     setNewProject({ ...newProject, [name]: value });
   };
@@ -61,7 +75,9 @@ const BtnAddProject: React.FC = () => {
 
   return (
     <div>
-      <Button variant="primary" onClick={handleShow}>+</Button>
+      <Button variant="primary" onClick={handleShow}>
+        +
+      </Button>
       <Modal show={showModal} onHide={handleClose}>
         <Modal.Header closeButton>
           <Modal.Title>Add New Project</Modal.Title>

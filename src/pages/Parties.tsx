@@ -1,11 +1,11 @@
-import React from 'react';
-import { useAuth0 } from '@auth0/auth0-react';
-import { useQuery } from '@tanstack/react-query';
-import { graphqlQuery, Party } from '../api/graphql';
-import { Table, Spinner, Alert } from 'react-bootstrap';
+import React from "react";
+import { useAuth0 } from "@auth0/auth0-react";
+import { useQuery } from "@tanstack/react-query";
+import { graphqlQuery } from "../api/graphql";
+import { Table, Spinner, Alert } from "react-bootstrap";
 
-import { gql } from 'graphql-request';
-import PartyRow from '../components/PartyRow';
+import { gql } from "graphql-request";
+import PartyRow from "../components/PartyRow";
 
 const GET_PARTIES = gql`
   query GetParties {
@@ -16,6 +16,7 @@ const GET_PARTIES = gql`
       idp_id
       party_roles {
         role_type {
+          value
           description
         }
       }
@@ -23,22 +24,46 @@ const GET_PARTIES = gql`
   }
 `;
 
+interface Party {
+  party_id: number;
+  first_name: string;
+  last_name: string;
+  idp_id: string;
+  party_roles: {
+    role_type: {
+      description: string;
+    };
+  }[];
+}
+
 const Parties: React.FC = () => {
   const { getAccessTokenSilently } = useAuth0();
   const FIVE_SECONDS = 5 * 1000;
 
-  const { data: parties, isLoading, error } = useQuery({
-    queryKey: ['parties'],
+  const {
+    data: parties,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["parties"],
     queryFn: async () => {
       const accessToken = await getAccessTokenSilently();
-      const data = await graphqlQuery<{ identity_parties: Party[] }>(accessToken, GET_PARTIES);
+      const data = await graphqlQuery<{ identity_parties: Party[] }>(
+        accessToken,
+        GET_PARTIES
+      );
       return data.identity_parties;
     },
     staleTime: FIVE_SECONDS,
   });
 
   if (isLoading) return <Spinner animation="border" />;
-  if (error) return <Alert variant="danger">An error occurred: {(error as Error).message}</Alert>;
+  if (error)
+    return (
+      <Alert variant="danger">
+        An error occurred: {(error as Error).message}
+      </Alert>
+    );
 
   return (
     <div>

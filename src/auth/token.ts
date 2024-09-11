@@ -16,8 +16,8 @@ export const useFetchUserIdFromToken = () => {
   const getUserId = async () => {
     try {
       const accessToken = await getAccessTokenSilently();
-      const decodedToken: DecodedToken = jwtDecode<DecodedToken>(accessToken);     
-      const userId = decodedToken.app_metadata?.project?.user_id; 
+      const decodedToken: DecodedToken = jwtDecode<DecodedToken>(accessToken);
+      const userId = decodedToken.app_metadata?.project?.user_id;
       return userId;
     } catch (error) {
       console.error('Error getting user ID from token:', error);

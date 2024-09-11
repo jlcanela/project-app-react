@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { useAuth0 } from '@auth0/auth0-react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { graphqlQuery } from '../api/graphql';
-import { Button, Modal } from 'react-bootstrap';
-import { Trash } from 'react-bootstrap-icons';
-import { gql } from 'graphql-request';
+import React, { useState } from "react";
+import { useAuth0 } from "@auth0/auth0-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { graphqlQuery } from "../api/graphql";
+import { Button, Modal } from "react-bootstrap";
+import { Trash } from "react-bootstrap-icons";
+import { gql } from "graphql-request";
 
 const DELETE_PROJECT = gql`
   mutation DeleteProject($id: Int!) {
@@ -32,10 +32,12 @@ const BtnDeleteProject: React.FC<BtnDeleteProjectProps> = ({ projectId }) => {
   const deleteProjectMutation = useMutation({
     mutationFn: async (id: string) => {
       const accessToken = await getAccessTokenSilently();
-      return graphqlQuery<DeleteProjectResponse>(accessToken, DELETE_PROJECT, { id });
+      return graphqlQuery<DeleteProjectResponse>(accessToken, DELETE_PROJECT, {
+        id,
+      });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
       setShowModal(false);
     },
   });
@@ -44,17 +46,13 @@ const BtnDeleteProject: React.FC<BtnDeleteProjectProps> = ({ projectId }) => {
   const handleClose = () => setShowModal(false);
 
   const handleDelete = () => {
-    console.log('handle delete');
+    console.log("handle delete");
     deleteProjectMutation.mutate(projectId);
   };
 
   return (
     <>
-      <Button
-        variant="danger"
-        size="sm"
-        onClick={handleShow}
-      >
+      <Button variant="danger" size="sm" onClick={handleShow}>
         <Trash /> Delete
       </Button>
 
@@ -67,12 +65,12 @@ const BtnDeleteProject: React.FC<BtnDeleteProjectProps> = ({ projectId }) => {
           <Button variant="secondary" onClick={handleClose}>
             Cancel
           </Button>
-          <Button 
-            variant="danger" 
+          <Button
+            variant="danger"
             onClick={handleDelete}
             disabled={deleteProjectMutation.isPending}
           >
-            {deleteProjectMutation.isPending ? 'Deleting...' : 'Delete'}
+            {deleteProjectMutation.isPending ? "Deleting..." : "Delete"}
           </Button>
         </Modal.Footer>
       </Modal>
