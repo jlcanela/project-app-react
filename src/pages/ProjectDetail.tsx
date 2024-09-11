@@ -4,19 +4,16 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { graphqlQuery } from "../api/graphql";
 import {
-  Form,
-  Button,
   Spinner,
   Alert,
-  Container,
-  Row,
-  Col,
 } from "react-bootstrap";
 import { gql } from "graphql-request";
+import EditProject from "../components/EditProject";
+import ViewProject from "../components/ViewProject";
 
 const GET_PROJECT = gql`
-  query GetProject($id: Int!) {
-    projects_by_pk(id: $id) {
+  query GetProject($projectId: Int!) {
+    projects_by_pk(id: $projectId) {
       id
       name
       description
@@ -28,6 +25,17 @@ const GET_PROJECT = gql`
         party_id
         name
       }
+    }
+    project_assignments(where: {project_id: {_eq: $projectId}}) {
+      party_role {
+        party {
+          name
+        }
+        role_type {
+          description
+        }
+      }
+      party_role_id
     }
   }
 `;
@@ -93,148 +101,32 @@ interface ProjectDetailProps {
     party_id: number;
     name: string;
   };
+  project_assignments: ProjectAssignment[];
 }
 
-interface ProjectProps {
-  project: ProjectDetailProps;
-  onEdit: () => void;
-  onBack: () => void;
+interface ProjectAssignment {
+  party_role_id: number;
+  party_name: string;
+  role_description: string;
 }
 
-const ViewProject: React.FC<ProjectProps> = ({ project, onEdit, onBack }) => {
-  return (
-    <>
-      <h1>Project Details</h1>
-      <p>
-        <strong>Name:</strong> {project.name}
-      </p>
-      <p>
-        <strong>Owner:</strong> {project.owner_party.name}
-      </p>
-      <p>
-        <strong>Description:</strong> {project.description}
-      </p>
-      <p>
-        <strong>Status:</strong> {project.project_status.description}
-      </p>
-      <Button variant="primary" onClick={onEdit}>
-        Edit Project
-      </Button>
-      <Button variant="secondary" className="ms-2" onClick={onBack}>
-        Back to Projects
-      </Button>
-    </>
-  );
-};
-
-interface EditProjectProps extends ProjectProps {
-  onUpdate: (updatedProject: ProjectDetailProps) => void;
-  onCancel: () => void;
-  projectStatuses: ProjectStatus[];
-  projectLeads: { party_id: number; name: string }[];
+interface ProjectAssignmentProps {
+  party_role: {
+    party_role_id: number;
+    party: {
+      name: string;
+    };
+    role_type: {
+      description: string;
+    };
+  }; 
 }
 
-const EditProject: React.FC<EditProjectProps> = ({
-  project,
-  onUpdate,
-  onCancel,
-  projectStatuses,
-  projectLeads,
-}) => {
-  const [editedProject, setEditedProject] =
-    useState<ProjectDetailProps>(project);
-
-  const handleInputChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
-  ) => {
-    const { name, value } = e.target;
-    setEditedProject((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleOwnerChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedPartyId = parseInt(e.target.value);
-    const selectedParty = projectLeads.find(
-      (lead) => lead.party_id === selectedPartyId
-    );
-    setEditedProject((prev) => ({
-      ...prev,
-      owner_party: {
-        party_id: selectedPartyId,
-        name: selectedParty ? selectedParty.name : "",
-      },
-    }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onUpdate(editedProject);
-  };
-
-  return (
-    <>
-      <h1>Edit Project</h1>
-      <Form onSubmit={handleSubmit}>
-        <Form.Group className="mb-3">
-          <Form.Label>Project Name</Form.Label>
-          <Form.Control
-            type="text"
-            name="name"
-            value={editedProject.name}
-            onChange={handleInputChange}
-            placeholder="Enter project name"
-          />
-        </Form.Group>
-        <Form.Group className="mb-3">
-          <Form.Label>Project Description</Form.Label>
-          <Form.Control
-            as="textarea"
-            rows={3}
-            name="description"
-            value={editedProject.description}
-            onChange={handleInputChange}
-            placeholder="Enter project description"
-          />
-        </Form.Group>
-        <Form.Group className="mb-3">
-          <Form.Label>Owner</Form.Label>
-          <Form.Select
-            name="owner"
-            value={editedProject.owner_party.party_id}
-            onChange={handleOwnerChange}
-          >
-            {projectLeads.map((lead) => (
-              <option key={lead.party_id} value={lead.party_id}>
-                {lead.name}
-              </option>
-            ))}
-          </Form.Select>
-        </Form.Group>
-        <Form.Group className="mb-3">
-          <Form.Label>Status</Form.Label>
-          <Form.Select
-            name="status"
-            value={editedProject.status}
-            onChange={handleInputChange}
-          >
-            {projectStatuses.map((status) => (
-              <option key={status.value} value={status.value}>
-                {status.description}
-              </option>
-            ))}
-          </Form.Select>
-        </Form.Group>
-        <Button variant="primary" type="submit">
-          Update Project
-        </Button>
-        <Button variant="secondary" className="ms-2" onClick={onCancel}>
-          Cancel
-        </Button>
-      </Form>
-    </>
-  );
-};
+interface ProjectAssignment {
+  party_role_id: number;
+  party_name: string;
+  role_description: string;
+}
 
 const ProjectDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -256,12 +148,13 @@ const ProjectDetail: React.FC = () => {
     queryKey: ["project", id],
     queryFn: async () => {
       const accessToken = await getAccessTokenSilently();
-      const data = await graphqlQuery<{ projects_by_pk: ProjectDetailProps }>(
+      const data = await graphqlQuery<{ projects_by_pk: ProjectDetailProps, project_assignments: ProjectAssignmentProps[] }>(
         accessToken,
         GET_PROJECT,
-        { id }
+        { projectId: parseInt(id as string) }
       );
-      return data.projects_by_pk;
+        
+      return data;
     },
     staleTime: 5 * 1000,
   });
@@ -347,29 +240,27 @@ const ProjectDetail: React.FC = () => {
   }
 
   return (
-    <Container>
-      <Row className="justify-content-md-center mt-5">
-        <Col md={6}>
-          {isEditMode ? (
-            <EditProject
-              project={project}
-              onUpdate={handleUpdate}
-              onCancel={toggleEditMode}
-              onEdit={toggleEditMode}
-              onBack={() => navigate("/projects")}
-              projectStatuses={projectStatuses}
-              projectLeads={projectLeads}
-            />
-          ) : (
-            <ViewProject
-              project={project}
-              onEdit={toggleEditMode}
-              onBack={() => navigate("/projects")}
-            />
-          )}
-        </Col>
-      </Row>
-    </Container>
+    <>
+      {isEditMode ? (
+        <EditProject
+          project={project.projects_by_pk}
+          project_assignments={project.project_assignments}
+          onUpdate={handleUpdate}
+          onCancel={() => navigate(`/projects/${id}`)}
+          projectStatuses={projectStatuses}
+          projectLeads={projectLeads}
+          //onEdit={toggleEditMode}
+          //onBack={() => navigate("/projects")}
+        />
+      ) : (
+        <ViewProject
+          project={project.projects_by_pk}
+          project_assignments={project.project_assignments}
+          onEdit={toggleEditMode}
+          onBack={() => navigate("/projects")}
+        />
+      )}
+    </>
   );
 };
 
