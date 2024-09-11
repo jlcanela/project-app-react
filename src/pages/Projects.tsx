@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useQuery } from '@tanstack/react-query';
-import { graphqlQuery, Project } from '../api/graphql';
+import { graphqlQuery } from '../api/graphql';
 import { Table, Spinner, Alert } from 'react-bootstrap';
 import ProjectRow, { PROJECT_ROW_FRAGMENT } from '../components/ProjectRow';
 import BtnAddProject from '../components/BtnAddProject';
@@ -15,6 +15,19 @@ const GET_PROJECTS = gql`
   }
   ${PROJECT_ROW_FRAGMENT}
 `;
+
+interface Project {
+  id: string;
+  name: string;
+  description: string;
+  project_status: {
+    description: string;
+  };
+  owner_party: {
+    party_id: number;
+    name: string;
+  };
+}
 
 const Projects: React.FC = () => {
   const { getAccessTokenSilently } = useAuth0();
@@ -41,6 +54,7 @@ const Projects: React.FC = () => {
           <tr>
             <th>ID</th>
             <th>Name</th>
+            <th>Owner</th>
             <th>Description</th>
             <th>Status</th>
             <th>Actions</th>

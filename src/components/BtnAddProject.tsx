@@ -4,13 +4,15 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { graphqlQuery } from '../api/graphql';
 import { Modal, Form, Button } from 'react-bootstrap';
 import { gql } from 'graphql-request';
+import { useFetchUserIdFromToken } from '../auth/token';
 
 const CREATE_PROJECT = gql`
-  mutation CreateProject($name: String!, $description: String!) {
-    insert_projects_one(object: { name: $name, description: $description }) {
+  mutation CreateProject($name: String!, $description: String!, $owner: Int!) {
+    insert_projects_one(object: {name: $name, description: $description, owner: $owner}) {
       id
       name
       description
+      owner
     }
   }
 `;
@@ -20,6 +22,7 @@ interface CreateProjectResponse {
     id: string;
     name: string;
     description: string;
+    owner: number;
   };
 }
 
@@ -27,16 +30,18 @@ const BtnAddProject: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [newProject, setNewProject] = useState({ name: '', description: '' });
 
+  const userId = useFetchUserIdFromToken();
+
   const handleClose = () => setShowModal(false);
   const handleShow = () => setShowModal(true);
-
+  
   const { getAccessTokenSilently } = useAuth0();
   const queryClient = useQueryClient();
 
   const createProjectMutation = useMutation({
     mutationFn: async ({ name, description }: { name: string; description: string }) => {
       const accessToken = await getAccessTokenSilently();
-      return graphqlQuery<CreateProjectResponse>(accessToken, CREATE_PROJECT, { name, description });
+      return graphqlQuery<CreateProjectResponse>(accessToken, CREATE_PROJECT, { name, description, owner: await userId() });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });

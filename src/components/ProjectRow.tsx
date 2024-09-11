@@ -12,6 +12,9 @@ export const PROJECT_ROW_FRAGMENT = `
     project_status {
       description
     }
+    owner_party {
+      name
+    }
   }
 `;
 
@@ -22,6 +25,9 @@ interface ProjectRowProps {
     description: string;
     project_status: {
       description: string;
+    };
+    owner_party: {
+      name: string;
     };
   };
 }
@@ -41,6 +47,7 @@ export const ProjectRow: React.FC<ProjectRowProps> = ({ project }) => {
     <tr>
       <td>{project.id}</td>
       <td>{project.name}</td>
+      <td>{project.owner_party.name}</td>
       <td>{project.description}</td>
       <td>{project.project_status.description}</td>
       <td>

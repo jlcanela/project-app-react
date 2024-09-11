@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { graphqlQuery, Project, ProjectStatus } from '../api/graphql';
+import { graphqlQuery } from '../api/graphql';
 import { Form, Button, Spinner, Alert, Container, Row, Col } from 'react-bootstrap';
 import { gql } from 'graphql-request';
 
@@ -16,13 +16,17 @@ const GET_PROJECT = gql`
       project_status {
         description
       }
+      owner_party {
+        party_id
+        name
+      }
     }
   }
 `;
 
 const UPDATE_PROJECT = gql`
-  mutation UpdateProject($id: Int!, $name: String!, $description: String!, $status: project_status_enum!) {
-    update_projects_by_pk(pk_columns: {id: $id}, _set: {name: $name, description: $description, status: $status}) {
+  mutation UpdateProject($id: Int!, $name: String!, $description: String!, $status: project_status_enum!, $owner: Int!) {
+    update_projects_by_pk(pk_columns: {id: $id}, _set: {name: $name, description: $description, status: $status, owner: $owner}) {
       id
     }
   }
@@ -37,8 +41,38 @@ const GET_PROJECT_STATUSES = gql`
   }
 `;
 
+const GET_PROJECT_LEADS = gql`
+  query GET_PROJECT_LEADS {
+    identity_party_roles(where: {role_type: {value: {_eq: "ProjectLead"}}}) {
+      party {
+        name
+        party_id
+      }
+    }
+  }
+`;
+
+interface ProjectStatus {
+    value: string;
+    description: string;
+}
+
+interface ProjectDetailProps {
+  id: string;
+  name: string;
+  description: string;
+  project_status: {
+    description: string;
+  };
+  status: string;
+  owner_party: {
+    party_id: number;
+    name: string;
+  };
+}
+
 interface ProjectProps {
-  project: Project;
+  project: ProjectDetailProps;
   onEdit: () => void;
   onBack: () => void;
 }
@@ -48,6 +82,7 @@ const ViewProject: React.FC<ProjectProps> = ({ project, onEdit, onBack }) => {
     <>
       <h1>Project Details</h1>
       <p><strong>Name:</strong> {project.name}</p>
+      <p><strong>Owner:</strong> {project.owner_party.name}</p>
       <p><strong>Description:</strong> {project.description}</p>
       <p><strong>Status:</strong> {project.project_status.description}</p>
       <Button variant="primary" onClick={onEdit}>
@@ -61,17 +96,30 @@ const ViewProject: React.FC<ProjectProps> = ({ project, onEdit, onBack }) => {
 };
 
 interface EditProjectProps extends ProjectProps {
-  onUpdate: (updatedProject: Project) => void;
+  onUpdate: (updatedProject: ProjectDetailProps) => void;
   onCancel: () => void;
   projectStatuses: ProjectStatus[];
+  projectLeads: { party_id: number; name: string }[];
 }
 
-const EditProject: React.FC<EditProjectProps> = ({ project, onUpdate, onCancel, projectStatuses }) => {
-  const [editedProject, setEditedProject] = useState<Project>(project);
+const EditProject: React.FC<EditProjectProps> = ({ project, onUpdate, onCancel, projectStatuses, projectLeads }) => {
+  const [editedProject, setEditedProject] = useState<ProjectDetailProps>(project);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setEditedProject(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleOwnerChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedPartyId = parseInt(e.target.value);
+    const selectedParty = projectLeads.find(lead => lead.party_id === selectedPartyId);
+    setEditedProject(prev => ({
+      ...prev,
+      owner_party: {
+        party_id: selectedPartyId,
+        name: selectedParty ? selectedParty.name : ''
+      }
+    }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -105,6 +153,20 @@ const EditProject: React.FC<EditProjectProps> = ({ project, onUpdate, onCancel, 
           />
         </Form.Group>
         <Form.Group className="mb-3">
+          <Form.Label>Owner</Form.Label>
+            <Form.Select
+            name="owner"
+            value={editedProject.owner_party.party_id}
+            onChange={handleOwnerChange}
+          >
+            {projectLeads.map(lead => (
+              <option key={lead.party_id} value={lead.party_id}>
+                {lead.name}
+              </option>
+            ))}
+          </Form.Select>
+        </Form.Group>
+        <Form.Group className="mb-3">
           <Form.Label>Status</Form.Label>
           <Form.Select
             name="status"
@@ -135,19 +197,17 @@ const ProjectDetail: React.FC = () => {
   const navigate = useNavigate();
   const { getAccessTokenSilently } = useAuth0();
   const queryClient = useQueryClient();
-  const [project, setProject] = useState<Project | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
 
   useEffect(() => {
     setIsEditMode(searchParams.get('mode') === 'edit');
   }, [searchParams]);
 
-  const { isLoading: isLoadingProject, error: projectError } = useQuery({
+  const { data: project, isLoading: isLoadingProject, error: projectError } = useQuery({
     queryKey: ['project', id],
     queryFn: async () => {
       const accessToken = await getAccessTokenSilently();
-      const data = await graphqlQuery<{ projects_by_pk: Project }>(accessToken, GET_PROJECT, { id });
-      setProject(data.projects_by_pk);
+      const data = await graphqlQuery<{ projects_by_pk: ProjectDetailProps }>(accessToken, GET_PROJECT, { id });
       return data.projects_by_pk;
     },
     staleTime: 5 * 1000,
@@ -163,14 +223,25 @@ const ProjectDetail: React.FC = () => {
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 
+  const { data: projectLeads, isLoading: isLoadingProjectLeads, error: projectLeadsError } = useQuery({
+    queryKey: ['projectLeads'],
+    queryFn: async () => {
+      const accessToken = await getAccessTokenSilently();
+      const data = await graphqlQuery<{ identity_party_roles: { party: { party_id: number; name: string } }[] }>(accessToken, GET_PROJECT_LEADS);
+      return data.identity_party_roles.map(role => role.party);
+    },
+    staleTime: 5 * 1000, // Cache for 5 seconds
+  });
+
   const updateProjectMutation = useMutation({
-    mutationFn: async (updatedProject: Project) => {
+    mutationFn: async (updatedProject: ProjectDetailProps) => {
       const accessToken = await getAccessTokenSilently();
       return graphqlQuery(accessToken, UPDATE_PROJECT, {
         id: updatedProject.id,
         name: updatedProject.name,
         description: updatedProject.description,
-        status: updatedProject.status // This uses the selected value in the select dropdown
+        status: updatedProject.status,
+        owner: updatedProject.owner_party.party_id
       });
     },
     onSuccess: () => {
@@ -180,7 +251,7 @@ const ProjectDetail: React.FC = () => {
     },
   });
 
-  const handleUpdate = (updatedProject: Project) => {
+  const handleUpdate = (updatedProject: ProjectDetailProps) => {
     updateProjectMutation.mutate(updatedProject);
   };
 
@@ -189,9 +260,11 @@ const ProjectDetail: React.FC = () => {
     navigate(isEditMode ? `/projects/${id}` : `/projects/${id}?mode=edit`);
   };
 
-  if (isLoadingProject || isLoadingStatuses) return <Spinner animation="border" />;
-  if (projectError || statusesError) return <Alert variant="danger">An error occurred: {((projectError || statusesError) as Error).message}</Alert>;
-  if (!project || !projectStatuses) return <Alert variant="warning">Project or status data not found</Alert>;
+  if (isLoadingProject || isLoadingStatuses || isLoadingProjectLeads) return <Spinner animation="border" />;
+  if (projectError || statusesError || projectLeadsError) return <Alert variant="danger">An error occurred: {((projectError || statusesError || projectLeadsError) as Error).message}</Alert>;
+  if (!project || !projectStatuses || !projectLeads) {
+    return <Alert variant="warning">Project, status, or project leads data not found</Alert>;
+  }
 
   return (
     <Container>
@@ -205,6 +278,7 @@ const ProjectDetail: React.FC = () => {
               onEdit={toggleEditMode}
               onBack={() => navigate('/projects')}
               projectStatuses={projectStatuses}
+              projectLeads={projectLeads}
             />
           ) : (
             <ViewProject

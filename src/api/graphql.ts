@@ -1,18 +1,7 @@
-//import * as gql from 'graphql-request';
-import { GraphQLClient, gql } from 'graphql-request';
+import { GraphQLClient } from 'graphql-request';
 
 const API_URL = 'http://localhost:8080/v1/graphql';
 const client = new GraphQLClient(API_URL);
-
-export interface Project {
-  id: string;
-  name: string;
-  description: string;
-  project_status: {
-    description: string;
-  };
-  status: string;
-}
 
 function headers(accessToken: String) {
   //const ADMIN_SECRET = 'admin_secret' 
