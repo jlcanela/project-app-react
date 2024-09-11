@@ -22,6 +22,9 @@ const MyNavbar: React.FC = () => {
             <Nav.Link as={Link} to="/parties">
               Parties
             </Nav.Link>
+            <Nav.Link as={Link} to="/form">
+              Form
+            </Nav.Link>
           </Nav>
           <Nav>
             {!isAuthenticated ? (

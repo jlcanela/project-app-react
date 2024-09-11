@@ -9,6 +9,7 @@ import { Auth0Provider } from "@auth0/auth0-react";
 import ProjectDetail from "./pages/ProjectDetail";
 import Parties from "./pages/Parties";
 import PartyDetail from "./pages/PartyDetail";
+import Form from "./pages/Form";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ const App: React.FC = () => {
               <Route path="/projects/:id" element={<ProjectDetail />} />
               <Route path="/parties" element={<Parties />} />
               <Route path="/parties/:id" element={<PartyDetail />} />
+              <Route path="/form" element={<Form />} />
             </Routes>
           </Container>
         </Router>
