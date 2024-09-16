@@ -25,6 +25,9 @@ const MyNavbar: React.FC = () => {
             <Nav.Link as={Link} to="/form">
               Form
             </Nav.Link>
+            <Nav.Link as={Link} to="/graph">
+              Graph Generator
+            </Nav.Link>
           </Nav>
           <Nav>
             {!isAuthenticated ? (

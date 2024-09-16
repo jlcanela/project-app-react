@@ -1,69 +1,72 @@
-import React from "react";
-import { useAuth0 } from "@auth0/auth0-react";
-import { useQuery } from "@tanstack/react-query";
-import { graphqlQuery } from "../api/graphql";
-import { Table, Spinner, Alert } from "react-bootstrap";
+// Parties.tsx
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Table, Spinner, Alert } from 'react-bootstrap';
+import { graphql, FragmentType, useFragment } from '../graphql';
+import { request } from 'graphql-request'
+import graphQLConfig from '../api/graphqlConfig';
+import { EntityRow, FieldConfig } from '../components/EntityRow';
+import { PartiesQuery, PartyRowFieldsFragment, ViewPartyFieldsFragment } from '../graphql/graphql';
 
-import { gql } from "graphql-request";
-import PartyRow from "../components/PartyRow";
-
-const GET_PARTIES = gql`
-  query GetParties {
-    identity_parties {
-      party_id
-      first_name
-      last_name
-      idp_id
-      party_roles {
-        role_type {
-          value
-          description
-        }
+const partyRowFieldsFragment = graphql(`
+  fragment PartyRowFields on identity_parties {
+    party_id
+    first_name
+    last_name
+    idp_id
+    party_roles {
+      role_type {
+        description
       }
     }
   }
-`;
+`);
 
-interface Party {
-  party_id: number;
-  first_name: string;
-  last_name: string;
-  idp_id: string;
-  party_roles: {
-    role_type: {
-      description: string;
-    };
-  }[];
-}
+const partiesQueryDocument = graphql(`
+  query Parties {
+    identity_parties {
+      ...PartyRowFields
+    }
+  }
+`);
+
+const partyFields: FieldConfig<PartyRowFieldsFragment>[] = [
+  { key: 'party_id', label: 'ID' },
+  { key: 'first_name', label: 'First Name' },
+  { key: 'last_name', label: 'Last Name' },
+  { key: 'idp_id', label: 'IDP ID' },
+  { 
+    key: 'party_roles', 
+    label: 'Roles',
+    render: (roles) => {
+      if (!roles || !Array.isArray(roles)) return "No roles";
+      return roles.map(role => role.role_type.description).filter(Boolean).join(", ");
+    }
+  }
+];
+
+const PartyRow: React.FC<{ party: FragmentType<typeof partyRowFieldsFragment> }> = ({ party }) => {
+  const fragmentData = useFragment(partyRowFieldsFragment, party);
+  
+  return (
+    <EntityRow<PartyRowFieldsFragment>
+      entity={fragmentData}
+      fields={partyFields}
+      idField="party_id"
+      entityName="parties"
+    />
+  );
+};
 
 const Parties: React.FC = () => {
-  const { getAccessTokenSilently } = useAuth0();
-  const FIVE_SECONDS = 5 * 1000;
-
-  const {
-    data: parties,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ["parties"],
-    queryFn: async () => {
-      const accessToken = await getAccessTokenSilently();
-      const data = await graphqlQuery<{ identity_parties: Party[] }>(
-        accessToken,
-        GET_PARTIES
-      );
-      return data.identity_parties;
-    },
-    staleTime: FIVE_SECONDS,
+  const { data, isLoading, error } = useQuery<PartiesQuery>({
+    queryKey: ['parties'],
+    queryFn: () => request({ ...graphQLConfig, document: partiesQueryDocument }),
   });
 
   if (isLoading) return <Spinner animation="border" />;
-  if (error)
-    return (
-      <Alert variant="danger">
-        An error occurred: {(error as Error).message}
-      </Alert>
-    );
+  if (error) return <Alert variant="danger">An error occurred: {(error as Error).message}</Alert>;
+  if (!data?.identity_parties) return <span>Data not present</span>;
 
   return (
     <div>
@@ -80,8 +83,8 @@ const Parties: React.FC = () => {
           </tr>
         </thead>
         <tbody>
-          {parties?.map((party) => (
-            <PartyRow key={party.party_id} party={party} />
+          {data.identity_parties.map((party, index) => (
+            <PartyRow key={index} party={party} />
           ))}
         </tbody>
       </Table>

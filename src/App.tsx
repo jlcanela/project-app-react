@@ -4,12 +4,15 @@ import { Container } from "react-bootstrap";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import MyNavbar from "./components/Navbar";
 import Home from "./pages/Home";
-import Projects from "./pages/Projects";
+//import Projects from "./pages/Projects";
 import { Auth0Provider } from "@auth0/auth0-react";
-import ProjectDetail from "./pages/ProjectDetail";
+//import ProjectDetail from "./pages/ProjectDetail";
 import Parties from "./pages/Parties";
-import PartyDetail from "./pages/PartyDetail";
+//import PartyDetail from "./pages/PartyDetail";
 import Form from "./pages/Form";
+import GraphGenerator from "./pages/GraphGenerator";
+import PartyDetail from "./pages/PartyDetail";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 const queryClient = new QueryClient();
 
@@ -20,6 +23,8 @@ const REACT_APP_AUTH0_DOMAIN = "dev-46eqp2s4.eu.auth0.com";
 const REACT_APP_AUTH0_CLIENT_ID = "XV6sNmaUfgpOEiG0L8ssjdbPdmUtSFor";
 
 const App: React.FC = () => {
+//  <Route path="/projects" element={<Projects />} />
+//  <Route path="/projects/:id" element={<ProjectDetail />} />
   return (
     <Auth0Provider
       domain={REACT_APP_AUTH0_DOMAIN}
@@ -33,19 +38,20 @@ const App: React.FC = () => {
         <Router>
           <MyNavbar />
           <Container>
+            <ErrorBoundary fallback={ <span>An error occured</span>}>
             <Routes>
               <Route path="/" element={<Home />} />
-              <Route path="/projects" element={<Projects />} />
-              <Route path="/projects/:id" element={<ProjectDetail />} />
-              <Route path="/parties" element={<Parties />} />
-              <Route path="/parties/:id" element={<PartyDetail />} />
-              <Route path="/form" element={<Form />} />
+              <Route path="/parties" element={<ErrorBoundary fallback={<span>An error occured</span>}><Parties /></ErrorBoundary>} /> 
+              <Route path="/parties/:id" element={<ErrorBoundary fallback={<span>An error occured</span>}><PartyDetail/></ErrorBoundary>} />
             </Routes>
+            </ErrorBoundary>
           </Container>
         </Router>
       </QueryClientProvider>
     </Auth0Provider>
   );
+//  <Route path="/form" element={<Form />} />
+//  <Route path="/graph" element={<GraphGenerator />} />
 };
 
 export default App;
