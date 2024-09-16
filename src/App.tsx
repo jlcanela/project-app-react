@@ -13,6 +13,8 @@ import Form from "./pages/Form";
 import GraphGenerator from "./pages/GraphGenerator";
 import PartyDetail from "./pages/PartyDetail";
 import ErrorBoundary from "./components/ErrorBoundary";
+import Projects from "./pages/Projects";
+import ProjectDetail from "./pages/ProjectDetail";
 
 const queryClient = new QueryClient();
 
@@ -23,16 +25,14 @@ const REACT_APP_AUTH0_DOMAIN = "dev-46eqp2s4.eu.auth0.com";
 const REACT_APP_AUTH0_CLIENT_ID = "XV6sNmaUfgpOEiG0L8ssjdbPdmUtSFor";
 
 const App: React.FC = () => {
-//  <Route path="/projects" element={<Projects />} />
-//  <Route path="/projects/:id" element={<ProjectDetail />} />
   return (
     <Auth0Provider
-      domain={REACT_APP_AUTH0_DOMAIN}
-      clientId={REACT_APP_AUTH0_CLIENT_ID}
-      authorizationParams={{
-        audience: "http://localhost:8081/",
-        redirect_uri: window.location.origin,
-      }}
+    domain={REACT_APP_AUTH0_DOMAIN}
+    clientId={REACT_APP_AUTH0_CLIENT_ID}
+    authorizationParams={{
+      audience: "http://localhost:8081/",
+      redirect_uri: window.location.origin,
+    }}
     >
       <QueryClientProvider client={queryClient}>
         <Router>
@@ -43,6 +43,8 @@ const App: React.FC = () => {
               <Route path="/" element={<Home />} />
               <Route path="/parties" element={<ErrorBoundary fallback={<span>An error occured</span>}><Parties /></ErrorBoundary>} /> 
               <Route path="/parties/:id" element={<ErrorBoundary fallback={<span>An error occured</span>}><PartyDetail/></ErrorBoundary>} />
+              <Route path="/projects" element={<ErrorBoundary fallback={<span>An error occured</span>}><Projects /></ErrorBoundary>} />
+              <Route path="/projects/:id" element={<ErrorBoundary fallback={<span>An error occured</span>}><ProjectDetail /></ErrorBoundary>} />
             </Routes>
             </ErrorBoundary>
           </Container>
