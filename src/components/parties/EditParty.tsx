@@ -1,7 +1,7 @@
 import React from "react";
 import { FragmentType, useFragment, graphql } from '../../graphql';
 import { EditDetails, FieldConfig } from '../EditDetails';
-import { EditPartyFieldsFragment } from "../../graphql/graphql";
+import { EditPartyFieldsFragment, PartyViewQuery } from "../../graphql/graphql";
 import { useMutation } from "@tanstack/react-query";
 import { request } from 'graphql-request';
 import graphQLConfig from '../../api/graphqlConfig';
@@ -18,6 +18,13 @@ const editPartyFieldsFragment = graphql(`
         description
       }
     }
+  }
+`);
+
+const editRoleTypeFieldsFragment = graphql(`
+  fragment RoleTypeFields on identity_role_type {
+    value
+    description
   }
 `);
 
@@ -38,18 +45,18 @@ const updateParty2 = graphql(`
 
 const updateParty = graphql(`
     mutation UpdateParty2(
-      $id: Int!
+      $party_id: Int!
       $first_name: String!
       $last_name: String!
       $roles: [identity_party_roles_insert_input!]!
     ) {
       update_identity_parties_by_pk(
-        pk_columns: { party_id: $id }
+        pk_columns: { party_id: $party_id }
         _set: { first_name: $first_name, last_name: $last_name }
       ) {
         party_id
       }
-      delete_identity_party_roles(where: { party: { party_id: { _eq: $id } } }) {
+      delete_identity_party_roles(where: { party: { party_id: { _eq: $party_id } } }) {
         affected_rows
       }
       insert_identity_party_roles(objects: $roles) {
@@ -59,14 +66,15 @@ const updateParty = graphql(`
   `);
 
 type EditPartyFieldsFragmentType = FragmentType<typeof editPartyFieldsFragment>;
+type RoleTypes = PartyViewQuery['identity_role_type']; //['role_type']
 
 export const EditParty: React.FC<{ 
     identity_parties_by_pk: EditPartyFieldsFragmentType, 
+    identity_role_type: RoleTypes,
     onCancel: () => void, 
     onBack: () => void
-  }> = ({ identity_parties_by_pk, onCancel, onBack }) => {
+  }> = ({ identity_parties_by_pk, identity_role_type, onCancel, onBack }) => {
   const party = useFragment(editPartyFieldsFragment, identity_parties_by_pk);
-
   const fields: FieldConfig<EditPartyFieldsFragment>[] = [
     { key: 'first_name', label: 'First Name', editable: true, inputType: 'text' },
     { key: 'last_name', label: 'Last Name', editable: true, inputType: 'text' },
@@ -76,9 +84,9 @@ export const EditParty: React.FC<{
       label: 'Roles',
       editable: true,
       inputType: 'multiselect',
-      options: party.party_roles.map(role => ({ 
-        value: role.role_type.value, 
-        label: role.role_type.description || 'Unknown'
+      options: identity_role_type.map(role_type => ({ 
+        value: role_type.value, 
+        label: role_type.description || 'Unknown'
       })),
       is_checked: (option: any, value: any[]) => {
         return value.map((v) => v.role_type.value).includes(option)

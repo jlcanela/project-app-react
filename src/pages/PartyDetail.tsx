@@ -24,6 +24,10 @@ const partyViewQueryDocument = graphql(`
     ...ViewPartyFields
     ...EditPartyFields
     }
+  identity_role_type {
+    value
+    description
+    }
   }
 `);
 
@@ -38,42 +42,57 @@ const PartyDetail: React.FC = () => {
     setIsEditMode(searchParams.get("mode") === "edit");
   }, [searchParams]);
   
-  const { data, isLoading, error } = useQuery<PartyViewQuery['identity_parties_by_pk']>({queryKey: ['parties'], queryFn: async () => {
-    const { identity_parties_by_pk } = await request({
+  const { data, isLoading, error } = useQuery<PartyViewQuery>({queryKey: ['parties'], queryFn: async () => {
+    const {
+      identity_parties_by_pk,
+      identity_role_type
+    } =  await request({
       ...graphQLConfig,
       'document': partyViewQueryDocument,
       variables: {
         id: party_id
       }
     });
-    return identity_parties_by_pk;
-  }});
 
-  const identity_parties = data;
+    return {
+      identity_parties_by_pk,
+      identity_role_type      
+    }
+  }});
 
   const toggleEditMode = () => {
     setIsEditMode(!isEditMode);
     navigate(isEditMode ? `/parties/${id}` : `/parties/${id}?mode=edit`);
   };
-
+  
   if (isLoading)
     return <Spinner animation="border" />;
   if (error)
-//    An error occurred: {((error || roleTypesError) as Error).message}
-    return (
-      <Alert variant="danger">
+    //    An error occurred: {((error || roleTypesError) as Error).message}
+  return (
+    <Alert variant="danger">
         An error occured
       </Alert>
     );
+  
+    if (!data) {
+      return <span>No data</span>;
+    }
 
+  let { 
+    identity_parties_by_pk, 
+    identity_role_type 
+  } = data;
+  
+  console.log(identity_role_type);
   return (
     <Container>
       <Row className="justify-content-md-center mt-5">
         <Col md={6}>
-          {identity_parties && (isEditMode ? ( <EditParty identity_parties_by_pk={identity_parties} onCancel={toggleEditMode} 
+          {identity_parties_by_pk && (isEditMode ? ( <EditParty identity_parties_by_pk={identity_parties_by_pk} identity_role_type={identity_role_type} onCancel={toggleEditMode} 
            onBack={() => navigate("/parties")} />
           ) : (
-           <ViewParty identity_parties_by_pk={identity_parties} onEdit={toggleEditMode}
+           <ViewParty identity_parties_by_pk={identity_parties_by_pk} onEdit={toggleEditMode}
            onBack={() => navigate("/parties")}
            />
           ))}
