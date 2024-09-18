@@ -1,11 +1,12 @@
 // components/projects/EditProject.tsx
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { FragmentType, useFragment, graphql } from '../../graphql';
 import { EditDetails, FieldConfig } from '../EditDetails';
-import { ProjectDetailFieldsFragment } from "../../graphql/graphql";
-import { useMutation } from "@tanstack/react-query";
+import { Project_Status_Enum, ProjectDetailFieldsFragment, ProjectLeadsQuery, ProjectStatusesQuery } from "../../graphql/graphql";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { request } from 'graphql-request';
 import graphQLConfig from '../../api/graphqlConfig';
+import { Form, Row, Col } from 'react-bootstrap';
 
 const projectDetailFieldsFragment = graphql(`
   fragment ProjectDetailFields on projects {
@@ -45,6 +46,24 @@ const updateProject = graphql(`
   }
 `);
 
+const projectLeadsQuery = graphql(`
+  query ProjectLeads {
+    identity_parties(where: {party_roles: {role_type: {description: {_eq: "Project Lead"}}}}) {
+      party_id
+      name
+    }
+  }
+`);
+
+const projectStatusesQuery = graphql(`
+  query ProjectStatuses {
+    project_status {
+      value
+      description
+    }
+  }
+`);
+
 type ProjectDetailFieldsFragmentType = FragmentType<typeof projectDetailFieldsFragment>;
 
 export const EditProject: React.FC<{ 
@@ -53,24 +72,20 @@ export const EditProject: React.FC<{
   onBack: () => void
 }> = ({ projects_by_pk, onCancel, onBack }) => {
   const project = useFragment(projectDetailFieldsFragment, projects_by_pk);
+  const [editedProject, setEditedProject] = useState(project);
 
-  const fields: FieldConfig<ProjectDetailFieldsFragment>[] = [
-    { key: 'name', label: 'Name', editable: true },
-    { key: 'description', label: 'Description', editable: true },
-    { key: 'status', label: 'Status', editable: true },
-    { 
-      key: 'project_status', 
-      label: 'Project Status',
-      editable: false,
-      render: (status) => status?.description || 'N/A'
-    },
-    { 
-      key: 'owner_party', 
-      label: 'Owner',
-      editable: false,
-      render: (owner) => owner?.name || 'N/A'
-    }
-  ];
+  const { data: projectLeadsData } = useQuery<ProjectLeadsQuery>({
+    queryKey: ['projectLeads'],
+    queryFn: () => request({ ...graphQLConfig, document: projectLeadsQuery }),
+  });
+
+  const { data: projectStatusesData } = useQuery<ProjectStatusesQuery>({
+    queryKey: ['projectStatuses'],
+    queryFn: () => request({ ...graphQLConfig, document: projectStatusesQuery }),
+  });
+
+  const projectLeads = projectLeadsData?.identity_parties || [];
+  const projectStatuses = projectStatusesData?.project_status || [];
 
   const updateProjectMutate = useMutation({
     mutationFn: (variables: any) => request({
@@ -79,32 +94,64 @@ export const EditProject: React.FC<{
       variables
     }),
     onSuccess: () => {
-      // Handle successful update
       onBack();
     },
     onError: (error) => {
-      // Handle error
       console.error("Error updating project:", error);
     }
   });
 
-  const handleSave = (updatedData: ProjectDetailFieldsFragment) => {
+  const handleSave = (updatedProject: ProjectDetailFieldsFragment) => {
     const params = {
-      id: project.id,
-      name: updatedData.name,
-      description: updatedData.description,
-      status: updatedData.status,
-      owner: updatedData.owner_party?.party_id
+      id: updatedProject.id,
+      name: updatedProject.name,
+      description: updatedProject.description,
+      status: updatedProject.status,
+      owner: updatedProject.owner_party?.party_id
     };
-
     updateProjectMutate.mutate(params);
   };
 
+  const fields: FieldConfig<ProjectDetailFieldsFragment>[] = [
+    { 
+      key: 'name', 
+      label: 'Name', 
+      editable: true, 
+      inputType: 'text' 
+    },
+    { 
+      key: 'description', 
+      label: 'Description', 
+      editable: true, 
+      inputType: 'text' 
+    },
+    {
+      key: 'owner_party',
+      label: 'Owner',
+      editable: true,
+      inputType: 'select',
+      options: projectLeads.map(lead => ({ 
+        value: lead.party_id.toString(), 
+        label: lead.name || 'Unknown'
+      }))
+    },
+    { 
+      key: 'status', 
+      label: 'Status',
+      editable: true,
+      inputType: 'select',
+      options: projectStatuses.map(status => ({ 
+        value: status.value, 
+        label: status.description || 'Unknown'
+      }))
+    },
+  ];
+  
   return (
     <EditDetails
-      data={project as ProjectDetailFieldsFragment}
+      data={editedProject}
       fields={fields}
-      title="Project Details"
+      title="Edit Project Details"
       onSave={handleSave}
       onCancel={onCancel}
     />

@@ -14,13 +14,14 @@ const editPartyFieldsFragment = graphql(`
     idp_id
     party_roles {
       role_type {
+        value
         description
       }
     }
   }
 `);
 
-const updateParty = graphql(`
+const updateParty2 = graphql(`
   mutation UpdateParty(
     $party_id: Int!
     $first_name: String!
@@ -35,7 +36,7 @@ const updateParty = graphql(`
   }
 `);
 
-const updateParty2 = graphql(`
+const updateParty = graphql(`
     mutation UpdateParty2(
       $id: Int!
       $first_name: String!
@@ -67,16 +68,30 @@ export const EditParty: React.FC<{
   const party = useFragment(editPartyFieldsFragment, identity_parties_by_pk);
 
   const fields: FieldConfig<EditPartyFieldsFragment>[] = [
-    { key: 'first_name', label: 'First Name', editable: true },
-    { key: 'last_name', label: 'Last Name', editable: true },
-    { key: 'idp_id', label: 'IDP ID', editable: false },
-    { 
-        key: 'party_roles', 
-        label: 'Roles',
-        editable: false,
-        render: (roles: EditPartyFieldsFragment['party_roles']) => 
-          roles?.map((role) => role.role_type?.description).join(", ") || "No roles"
-      }
+    { key: 'first_name', label: 'First Name', editable: true, inputType: 'text' },
+    { key: 'last_name', label: 'Last Name', editable: true, inputType: 'text' },
+    { key: 'idp_id', label: 'IDP ID', editable: false, inputType: 'text' },
+    {
+      key: 'party_roles',
+      label: 'Roles',
+      editable: true,
+      inputType: 'multiselect',
+      options: party.party_roles.map(role => ({ 
+        value: role.role_type.value, 
+        label: role.role_type.description || 'Unknown'
+      })),
+      is_checked: (option: any, value: any[]) => {
+        return value.map((v) => v.role_type.value).includes(option)
+      },
+      uncheck: (currentValues: any[], option: any) => {
+        return currentValues.filter((value) => value.role_type.value !== option.value);
+      },
+      check:  (currentValues: any[], options: any[] | undefined, option: any) => {
+        const newValue = { role_type: options?.find((o) => o.value === option.value) };
+        const newValues = [...currentValues, newValue];
+        return newValues;
+      },
+    }
   ];
 
   const updatePartyMutate = useMutation({
@@ -100,14 +115,14 @@ export const EditParty: React.FC<{
         party_id: party.party_id,
         first_name: updatedData.first_name,
         last_name: updatedData.last_name,
-      //   roles: updatedData.party_roles.map(role => ({
-      //     party_id: updatedData.party_id,
-      //     role_type_id: role.role_type.role_type_id
-      //   }))
+        roles: updatedData.party_roles.map(role => ({
+          party_id: updatedData.party_id,
+          role_type_id: role.role_type.value
+        }))
       };
-
     updatePartyMutate.mutate(params);
   };
+
 
   return (
     <EditDetails

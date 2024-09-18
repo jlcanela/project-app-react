@@ -43,7 +43,6 @@ type DeepPartial<T> = {
 
   // Usage
 const trueObject = generateTrueObject<ProjectDetailProps>();
- // console.log(JSON.stringify(trueObject, null, 2));
 
 const G: React.FC = () => {
   return (
