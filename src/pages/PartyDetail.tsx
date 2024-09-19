@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { useAuth0 } from "@auth0/auth0-react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { graphql } from '../graphql';
 import { request } from 'graphql-request'
 import graphQLConfig from '../api/graphqlConfig';
@@ -25,8 +24,7 @@ const partyViewQueryDocument = graphql(`
     ...EditPartyFields
     }
   identity_role_type {
-    value
-    description
+    ...RoleTypeFields
     }
   }
 `);

@@ -1,7 +1,7 @@
 // ProjectDetail.tsx
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { graphql } from '../graphql';
 import { request } from 'graphql-request'
 import graphQLConfig from '../api/graphqlConfig';
@@ -14,22 +14,6 @@ const projectViewQueryDocument = graphql(`
   query ProjectView($id: Int!) {
     projects_by_pk(id: $id) {
       ...ProjectDetailFields
-    }
-  }
-`);
-
-const projectDetailFieldsFragment = graphql(`
-  fragment ProjectDetailFields on projects {
-    id
-    name
-    description
-    status
-    project_status {
-      description
-    }
-    owner_party {
-      party_id
-      name
     }
   }
 `);

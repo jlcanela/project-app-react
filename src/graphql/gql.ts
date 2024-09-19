@@ -15,7 +15,6 @@ import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/
 const documents = {
     "\n  fragment EditPartyFields on identity_parties {\n    party_id\n    first_name\n    last_name\n    idp_id\n    party_roles {\n      role_type {\n        value\n        description\n      }\n    }\n  }\n": types.EditPartyFieldsFragmentDoc,
     "\n  fragment RoleTypeFields on identity_role_type {\n    value\n    description\n  }\n": types.RoleTypeFieldsFragmentDoc,
-    "\n  mutation UpdateParty(\n    $party_id: Int!\n    $first_name: String!\n    $last_name: String!\n  ) {\n    update_identity_parties_by_pk(\n      pk_columns: { party_id: $party_id }\n      _set: { first_name: $first_name, last_name: $last_name }\n    ) {\n      party_id\n    }\n  }\n": types.UpdatePartyDocument,
     "\n    mutation UpdateParty2(\n      $party_id: Int!\n      $first_name: String!\n      $last_name: String!\n      $roles: [identity_party_roles_insert_input!]!\n    ) {\n      update_identity_parties_by_pk(\n        pk_columns: { party_id: $party_id }\n        _set: { first_name: $first_name, last_name: $last_name }\n      ) {\n        party_id\n      }\n      delete_identity_party_roles(where: { party: { party_id: { _eq: $party_id } } }) {\n        affected_rows\n      }\n      insert_identity_party_roles(objects: $roles) {\n        affected_rows\n      }\n    }\n  ": types.UpdateParty2Document,
     "\n  fragment ViewPartyFields on identity_parties {\n    party_id\n    first_name\n    last_name\n    idp_id\n    party_roles {\n      role_type {\n        description\n      }\n    }\n  }\n": types.ViewPartyFieldsFragmentDoc,
     "\n  fragment ProjectDetailFields on projects {\n    id\n    name\n    description\n    status\n    project_status {\n      description\n    }\n    owner_party {\n      party_id\n      name\n    }\n  }\n": types.ProjectDetailFieldsFragmentDoc,
@@ -24,7 +23,7 @@ const documents = {
     "\n  query ProjectStatuses {\n    project_status {\n      value\n      description\n    }\n  }\n": types.ProjectStatusesDocument,
     "\n  fragment PartyRowFields on identity_parties {\n    party_id\n    first_name\n    last_name\n    idp_id\n    party_roles {\n      role_type {\n        description\n      }\n    }\n  }\n": types.PartyRowFieldsFragmentDoc,
     "\n  query Parties {\n    identity_parties {\n      ...PartyRowFields\n    }\n  }\n": types.PartiesDocument,
-    "\n query PartyView($id: Int!) {\n  identity_parties_by_pk(party_id: $id) {\n    ...ViewPartyFields\n    ...EditPartyFields\n    }\n  identity_role_type {\n    value\n    description\n    }\n  }\n": types.PartyViewDocument,
+    "\n query PartyView($id: Int!) {\n  identity_parties_by_pk(party_id: $id) {\n    ...ViewPartyFields\n    ...EditPartyFields\n    }\n  identity_role_type {\n    ...RoleTypeFields\n    }\n  }\n": types.PartyViewDocument,
     "\n  query ProjectView($id: Int!) {\n    projects_by_pk(id: $id) {\n      ...ProjectDetailFields\n    }\n  }\n": types.ProjectViewDocument,
     "\n  fragment ProjectRowFields on projects {\n    id\n    name\n    description\n    project_status {\n      description\n    }\n    owner_party {\n      name\n    }\n  }\n": types.ProjectRowFieldsFragmentDoc,
     "\n  query Projects {\n    projects {\n      ...ProjectRowFields\n    }\n  }\n": types.ProjectsDocument,
@@ -52,10 +51,6 @@ export function graphql(source: "\n  fragment EditPartyFields on identity_partie
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  fragment RoleTypeFields on identity_role_type {\n    value\n    description\n  }\n"): (typeof documents)["\n  fragment RoleTypeFields on identity_role_type {\n    value\n    description\n  }\n"];
-/**
- * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
- */
-export function graphql(source: "\n  mutation UpdateParty(\n    $party_id: Int!\n    $first_name: String!\n    $last_name: String!\n  ) {\n    update_identity_parties_by_pk(\n      pk_columns: { party_id: $party_id }\n      _set: { first_name: $first_name, last_name: $last_name }\n    ) {\n      party_id\n    }\n  }\n"): (typeof documents)["\n  mutation UpdateParty(\n    $party_id: Int!\n    $first_name: String!\n    $last_name: String!\n  ) {\n    update_identity_parties_by_pk(\n      pk_columns: { party_id: $party_id }\n      _set: { first_name: $first_name, last_name: $last_name }\n    ) {\n      party_id\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -91,7 +86,7 @@ export function graphql(source: "\n  query Parties {\n    identity_parties {\n  
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n query PartyView($id: Int!) {\n  identity_parties_by_pk(party_id: $id) {\n    ...ViewPartyFields\n    ...EditPartyFields\n    }\n  identity_role_type {\n    value\n    description\n    }\n  }\n"): (typeof documents)["\n query PartyView($id: Int!) {\n  identity_parties_by_pk(party_id: $id) {\n    ...ViewPartyFields\n    ...EditPartyFields\n    }\n  identity_role_type {\n    value\n    description\n    }\n  }\n"];
+export function graphql(source: "\n query PartyView($id: Int!) {\n  identity_parties_by_pk(party_id: $id) {\n    ...ViewPartyFields\n    ...EditPartyFields\n    }\n  identity_role_type {\n    ...RoleTypeFields\n    }\n  }\n"): (typeof documents)["\n query PartyView($id: Int!) {\n  identity_parties_by_pk(party_id: $id) {\n    ...ViewPartyFields\n    ...EditPartyFields\n    }\n  identity_role_type {\n    ...RoleTypeFields\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

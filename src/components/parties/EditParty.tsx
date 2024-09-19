@@ -21,25 +21,10 @@ const editPartyFieldsFragment = graphql(`
   }
 `);
 
-const editRoleTypeFieldsFragment = graphql(`
+export const editRoleTypeFieldsFragment = graphql(`
   fragment RoleTypeFields on identity_role_type {
     value
     description
-  }
-`);
-
-const updateParty2 = graphql(`
-  mutation UpdateParty(
-    $party_id: Int!
-    $first_name: String!
-    $last_name: String!
-  ) {
-    update_identity_parties_by_pk(
-      pk_columns: { party_id: $party_id }
-      _set: { first_name: $first_name, last_name: $last_name }
-    ) {
-      party_id
-    }
   }
 `);
 
@@ -75,6 +60,7 @@ export const EditParty: React.FC<{
     onBack: () => void
   }> = ({ identity_parties_by_pk, identity_role_type, onCancel, onBack }) => {
   const party = useFragment(editPartyFieldsFragment, identity_parties_by_pk);
+  const role_types = useFragment(editRoleTypeFieldsFragment, identity_role_type);
   const fields: FieldConfig<EditPartyFieldsFragment>[] = [
     { key: 'first_name', label: 'First Name', editable: true, inputType: 'text' },
     { key: 'last_name', label: 'Last Name', editable: true, inputType: 'text' },
@@ -84,7 +70,7 @@ export const EditParty: React.FC<{
       label: 'Roles',
       editable: true,
       inputType: 'multiselect',
-      options: identity_role_type.map(role_type => ({ 
+      options: role_types.map(role_type => ({ 
         value: role_type.value, 
         label: role_type.description || 'Unknown'
       })),
